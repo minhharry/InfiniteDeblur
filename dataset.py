@@ -8,7 +8,7 @@ from torchvision.transforms import v2
 
 
 class GoProDataset(Dataset):
-    def __init__(self, root_dir='C:\\Users\\ad\Desktop\\New folder (3)\\InfiniteDeblur\\train', transform=None, size=512):
+    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', transform=None, size=512):
         self.root_dir = root_dir
         self.transform = transform
         self.images = {
@@ -31,17 +31,17 @@ class GoProDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load image and label
-        transalation_step = 16
+        transalation_step = random.randint(3, 10)
         blur_gamma_image = Image.open(self.images['blur_gamma'][idx])
         sharp_image = Image.open(self.images['sharp'][idx])
         sharp_images = []
 
-        assert blur_gamma_image.size[0] >= self.size and blur_gamma_image.size[1] >= self.size, f"Check image size ({self.images['blur_gamma'][idx]}) in dataset."
-        assert sharp_image.size[0] >= self.size and sharp_image.size[1] >= self.size, f"Check image size ({self.images['sharp'][idx]}) in dataset."
+        assert blur_gamma_image.size[0] >= self.size + transalation_step and blur_gamma_image.size[1] >= self.size + transalation_step, f"Check image size ({self.images['blur_gamma'][idx]}) in dataset."
+        assert sharp_image.size[0] >= self.size + transalation_step and sharp_image.size[1] >= self.size + transalation_step, f"Check image size ({self.images['sharp'][idx]}) in dataset."
 
         blur_gamma_image = blur_gamma_image.convert('RGB')
         sharp_image = sharp_image.convert('RGB')
-        x, y = random.randint(0, blur_gamma_image.size[0]-self.size), random.randint(0, blur_gamma_image.size[1]-self.size)
+        x, y = random.randint(0, blur_gamma_image.size[0]-self.size-transalation_step), random.randint(0, blur_gamma_image.size[1]-self.size-transalation_step)
         blur_gamma_image = blur_gamma_image.crop((x,y,x+self.size,y+self.size))
         sharp_image_src = sharp_image.crop((x,y,x+self.size,y+self.size))
         print(type(blur_gamma_image))
@@ -55,10 +55,6 @@ class GoProDataset(Dataset):
         sharp_image_translate_x_bwd_y_bwd = sharp_image.crop((x-transalation_step,y-transalation_step,x-transalation_step+self.size,y-transalation_step+self.size))
         sharp_images = [sharp_image_src,sharp_image_translate_x_fwd,sharp_image_translate_x_bwd,sharp_image_translate_y_fwd,sharp_image_translate_y_bwd,sharp_image_translate_x_fwd_y_fwd,sharp_image_translate_x_fwd_y_bwd,sharp_image_translate_x_bwd_y_fwd,sharp_image_translate_x_bwd_y_bwd]
 
-
-
-
-
         # Transform image and label
         if self.transform:
             blur_gamma_image = self.transform(blur_gamma_image)
@@ -66,8 +62,7 @@ class GoProDataset(Dataset):
             for sharp_sample in sharp_images:
                 temp.append(self.transform(sharp_sample))
             sharp_images = temp
-
-        
+            
         return blur_gamma_image, sharp_images
 
 if __name__ == '__main__':   
