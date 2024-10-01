@@ -8,7 +8,7 @@ from torchvision.transforms import v2
 
 
 class GoProDataset(Dataset):
-    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', transform=None, size=256):
+    def __init__(self, root_dir='C:\\Users\\ad\Desktop\\New folder (3)\\InfiniteDeblur\\train', transform=None, size=512):
         self.root_dir = root_dir
         self.transform = transform
         self.images = {
@@ -31,8 +31,10 @@ class GoProDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load image and label
+        transalation_step = 16
         blur_gamma_image = Image.open(self.images['blur_gamma'][idx])
         sharp_image = Image.open(self.images['sharp'][idx])
+        sharp_images = []
 
         assert blur_gamma_image.size[0] >= self.size and blur_gamma_image.size[1] >= self.size, f"Check image size ({self.images['blur_gamma'][idx]}) in dataset."
         assert sharp_image.size[0] >= self.size and sharp_image.size[1] >= self.size, f"Check image size ({self.images['sharp'][idx]}) in dataset."
@@ -41,14 +43,32 @@ class GoProDataset(Dataset):
         sharp_image = sharp_image.convert('RGB')
         x, y = random.randint(0, blur_gamma_image.size[0]-self.size), random.randint(0, blur_gamma_image.size[1]-self.size)
         blur_gamma_image = blur_gamma_image.crop((x,y,x+self.size,y+self.size))
-        sharp_image = sharp_image.crop((x,y,x+self.size,y+self.size))
+        sharp_image_src = sharp_image.crop((x,y,x+self.size,y+self.size))
+        print(type(blur_gamma_image))
+        sharp_image_translate_x_fwd = sharp_image.crop((x+transalation_step,y,x+transalation_step+self.size,y+self.size))
+        sharp_image_translate_x_bwd = sharp_image.crop((x-transalation_step,y,x-transalation_step+self.size,y+self.size))
+        sharp_image_translate_y_fwd = sharp_image.crop((x,y+transalation_step,x+self.size,y+transalation_step+self.size))
+        sharp_image_translate_y_bwd = sharp_image.crop((x,y-transalation_step,x+self.size,y-transalation_step+self.size))
+        sharp_image_translate_x_fwd_y_fwd = sharp_image.crop((x+transalation_step,y+transalation_step,x+transalation_step+self.size,y+transalation_step+self.size))
+        sharp_image_translate_x_fwd_y_bwd = sharp_image.crop((x+transalation_step,y-transalation_step,x+transalation_step+self.size,y-transalation_step+self.size))
+        sharp_image_translate_x_bwd_y_fwd = sharp_image.crop((x-transalation_step,y+transalation_step,x-transalation_step+self.size,y+transalation_step+self.size))
+        sharp_image_translate_x_bwd_y_bwd = sharp_image.crop((x-transalation_step,y-transalation_step,x-transalation_step+self.size,y-transalation_step+self.size))
+        sharp_images = [sharp_image_src,sharp_image_translate_x_fwd,sharp_image_translate_x_bwd,sharp_image_translate_y_fwd,sharp_image_translate_y_bwd,sharp_image_translate_x_fwd_y_fwd,sharp_image_translate_x_fwd_y_bwd,sharp_image_translate_x_bwd_y_fwd,sharp_image_translate_x_bwd_y_bwd]
+
+
+
+
 
         # Transform image and label
         if self.transform:
             blur_gamma_image = self.transform(blur_gamma_image)
-            sharp_image = self.transform(sharp_image)
+            temp = []
+            for sharp_sample in sharp_images:
+                temp.append(self.transform(sharp_sample))
+            sharp_images = temp
+
         
-        return blur_gamma_image, sharp_image
+        return blur_gamma_image, sharp_images
 
 if __name__ == '__main__':   
     import matplotlib.pyplot as plt
@@ -61,10 +81,15 @@ if __name__ == '__main__':
 
     dataset = GoProDataset(transform=transform)
     
-    sample_blur, sample_sharp = dataset[np.random.randint(0, len(dataset))]
+    sample_blur, sample_sharps = dataset[np.random.randint(0, len(dataset))]
+    print(type(sample_sharps[0]))
     sample_blur = sample_blur.numpy().transpose(1, 2, 0)
-    sample_sharp = sample_sharp.numpy().transpose(1, 2, 0)
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].imshow(sample_blur)
-    axes[1].imshow(sample_sharp)    
+    sample = [sample_blur]
+    for item in sample_sharps:
+        sample.append(item.numpy().transpose(1,2,0))
+
+    fig, axes = plt.subplots(5, 2, figsize=(30, 30))
+    for i in range(5):
+        for j in range(2):
+            axes[i,j].imshow(sample[i+j])
     plt.show()
