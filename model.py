@@ -3,55 +3,40 @@ import torch.nn as nn
 
 
 class ChannelAttention(nn.Module):
-    def __init__(self, channels, reduction_rate=16):
+    def __init__(self, channels, reduction_rate=2):
         super().__init__()
-        self.squeeze = nn.ModuleList([
+        self.se = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            nn.AdaptiveMaxPool2d(1)
-        ])
-        self.excitation = nn.Sequential(
-            nn.Conv2d(in_channels=channels,
-                      out_channels=channels // reduction_rate,
-                      kernel_size=1),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=channels // reduction_rate,
-                      out_channels=channels,
-                      kernel_size=1)
+            nn.Conv2d(in_channels=channels, out_channels=channels // reduction_rate, kernel_size=1, padding=0, stride=1,
+                      groups=1, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=channels // reduction_rate, out_channels=channels, kernel_size=1, padding=0, stride=1,
+                      groups=1, bias=True),
+            nn.Sigmoid()
         )
-        self.sigmoid = nn.Sigmoid()
-
     def forward(self, x):
-        # perform squeeze with independent Pooling
-        avg_feat = self.squeeze[0](x)
-        max_feat = self.squeeze[1](x)
-        # perform excitation with the same excitation sub-net
-        avg_out = self.excitation(avg_feat)
-        max_out = self.excitation(max_feat)
-        # attention
-        attention = self.sigmoid(avg_out + max_out)
-        return attention * x
+        return self.se(x) * x
     
 
 class BaseLineBlock(nn.Module):
     def __init__(self, num_channels):
         super().__init__()
         self.conv1 = nn.Conv2d(num_channels, num_channels, 1, 1, 0)
-        self.conv2 = nn.Conv2d(num_channels, num_channels, 3, 1, 1)
-        self.norm1 = nn.InstanceNorm2d(num_channels)
+        self.conv2 = nn.Conv2d(num_channels, num_channels, 3, 1, 1, groups=num_channels)
+        self.norm1 = nn.GroupNorm(16, num_channels)
         self.gelu = nn.GELU()
         self.CA = ChannelAttention(num_channels)
         self.conv3 = nn.Conv2d(num_channels, num_channels, 1, 1, 0)
 
-        self.norm2 = nn.InstanceNorm2d(num_channels)
+        self.norm2 = nn.GroupNorm(16, num_channels)
         self.conv4 = nn.Conv2d(num_channels, num_channels*2, 1, 1, 0)
         self.conv5 = nn.Conv2d(num_channels*2, num_channels, 1, 1, 0)
 
-        self.beta = nn.Parameter(torch.randn(1, num_channels, 1, 1), requires_grad=True)
-        self.gamma = nn.Parameter(torch.randn(1, num_channels, 1, 1), requires_grad=True)
+        self.beta = nn.Parameter(torch.zeros(1, num_channels, 1, 1), requires_grad=True)
+        self.gamma = nn.Parameter(torch.zeros(1, num_channels, 1, 1), requires_grad=True)
 
-    def forward(self, x):
-        residual = x
-        x = self.norm1(x)
+    def forward(self, residual):
+        x = self.norm1(residual)
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.gelu(x)
@@ -70,10 +55,10 @@ class BaseLineBlock(nn.Module):
 class BaseLineUnet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.num_encoder_blocks = [1, 2, 4, 8]
+        self.num_encoder_blocks = [1, 1, 1, 28]
         self.num_decoder_blocks = [1, 1, 1, 1]
-        self.num_bottleneck_block = 2
-        self.base_channels = 32
+        self.num_bottleneck_block = 1
+        self.base_channels = 16
         
         self.encoders = nn.ModuleList()
         self.decoders = nn.ModuleList()
@@ -102,8 +87,8 @@ class BaseLineUnet(nn.Module):
             
             self.ups.append(
                 nn.Sequential(
-                    nn.Upsample(scale_factor=2, mode="bilinear"),
-                    nn.Conv2d(channels, channels // 2, 3, 1, 1),
+                    nn.Conv2d(channels, channels * 2, 1, bias=False),
+                    nn.PixelShuffle(2)
                 )
             )
             channels //= 2
@@ -113,8 +98,8 @@ class BaseLineUnet(nn.Module):
                 )
             )
 
-    def forward(self, x):
-        x = self.in_conv(x)
+    def forward(self, inp):
+        x = self.in_conv(inp)
         skip_connections = []
         for i in range(len(self.encoders)):
             x = self.encoders[i](x)
@@ -124,10 +109,10 @@ class BaseLineUnet(nn.Module):
         x = self.bottlenecks(x)
         for i in range(len(self.decoders)):
             x = self.ups[i](x)
-            x = x + skip_connections.pop()
+            x = x + skip_connections[len(self.decoders)-i-1]
             x = self.decoders[i](x)
         x = self.out_conv(x)
-        return x
+        return x + inp
     
 if __name__ == '__main__':
     from torchinfo import summary
