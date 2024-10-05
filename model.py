@@ -45,7 +45,7 @@ class BaseLineBlock(nn.Module):
 
         y = x * self.beta + residual
 
-        x = self.norm2(x)
+        x = self.norm2(y)
         x = self.conv4(x)
         x = self.gelu(x)
         x = self.conv5(x)
@@ -58,7 +58,7 @@ class BaseLineUnet(nn.Module):
         self.num_encoder_blocks = [1, 1, 1, 28]
         self.num_decoder_blocks = [1, 1, 1, 1]
         self.num_bottleneck_block = 1
-        self.base_channels = 16
+        self.base_channels = 32
         
         self.encoders = nn.ModuleList()
         self.decoders = nn.ModuleList()
