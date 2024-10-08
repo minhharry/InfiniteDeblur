@@ -1,3 +1,4 @@
+import glob
 import os
 import random
 
@@ -5,7 +6,59 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import v2
+import torchvision
 
+class AnimeDataset(Dataset):
+    def __init__(self, root_dir='E:\\Downloads\\ImageDatasets', size=256):
+        self.root_dir = root_dir
+        self.size = size
+        self.images_paths = []
+
+        self.to_tensor = v2.Compose([
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True)
+        ])
+        self.aug = v2.Compose([
+            v2.Resize(720),
+            v2.RandomCrop(size),
+            v2.RandomVerticalFlip(),
+            v2.RandomHorizontalFlip(),
+        ])
+        self.aug_blur = [
+            v2.GaussianBlur(3, sigma=(0.5, 2.0)),
+            v2.GaussianBlur(5, sigma=(0.5, 2.0)),
+            v2.GaussianBlur(7, sigma=(0.5, 2.0)),
+            v2.Compose([
+                v2.Resize(size // 2),
+                v2.Resize(size, interpolation=torchvision.transforms.InterpolationMode.NEAREST),
+            ]),
+            v2.Compose([
+                v2.Resize(size // 3),
+                v2.Resize(size, interpolation=torchvision.transforms.InterpolationMode.NEAREST),
+            ]),
+            v2.Compose([
+                v2.Resize(size // 4),
+                v2.Resize(size, interpolation=torchvision.transforms.InterpolationMode.NEAREST),
+            ]),
+        ]
+        
+        for dir in os.listdir(root_dir):
+            for file in os.listdir(os.path.join(root_dir, dir)):
+                self.images_paths.append(os.path.join(root_dir, dir, file))
+
+    def __len__(self):
+        return len(self.images_paths)
+    
+    def __getitem__(self, idx):
+        img = Image.open(self.images_paths[idx]).convert('RGB')
+        img = self.to_tensor(img)
+        img = self.aug(img)
+        blur = self.aug_blur[random.randint(0, len(self.aug_blur) - 1)](img)
+        for _ in range(random.randint(0, 3)):
+            blur = self.aug_blur[random.randint(0, len(self.aug_blur) - 1)](blur)
+        blur += torch.randn(3, self.size, self.size) * random.uniform(0.01, 0.1)
+        blur = torch.clamp(blur, 0, 1)
+        return blur, img
 
 class GoProDataset(Dataset):
     def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', transform=None, size=256):
@@ -47,7 +100,9 @@ class GoProDataset(Dataset):
         if self.transform:
             blur_gamma_image = self.transform(blur_gamma_image)
             sharp_image = self.transform(sharp_image)
-        
+
+        noise = torch.randn(3, self.size, self.size) * 0.02
+        blur_gamma_image += noise
         return blur_gamma_image, sharp_image
 
 class GoProDatasetMulipleLabel(Dataset):
@@ -107,7 +162,8 @@ class GoProDatasetMulipleLabel(Dataset):
             sharp_images = temp
             
         return blur_gamma_image, sharp_images
-
+    
+    
 if __name__ == '__main__':   
     import matplotlib.pyplot as plt
     import numpy as np
@@ -119,15 +175,10 @@ if __name__ == '__main__':
 
     dataset = GoProDataset(transform=transform)
     
-    sample_blur, sample_sharps = dataset[np.random.randint(0, len(dataset))]
-    print(type(sample_sharps[0]))
-    sample_blur = sample_blur.numpy().transpose(1, 2, 0)
-    sample = [sample_blur]
-    for item in sample_sharps:
-        sample.append(item.numpy().transpose(1,2,0))
+    sample_blur, sample_sharp = dataset[np.random.randint(0, len(dataset))]
+    
+    fig, axes = plt.subplots(1, 2, figsize=(30, 30), dpi=300)
 
-    fig, axes = plt.subplots(5, 2, figsize=(30, 30))
-    for i in range(5):
-        for j in range(2):
-            axes[i,j].imshow(sample[i+j])
+    axes[0].imshow(sample_blur.squeeze().numpy().transpose(1, 2, 0))
+    axes[1].imshow(sample_sharp.squeeze().numpy().transpose(1, 2, 0))
     plt.show()
