@@ -3,10 +3,11 @@ import os
 import random
 
 import torch
+import torchvision
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import v2
-import torchvision
+
 
 class AnimeDataset(Dataset):
     def __init__(self, root_dir='E:\\Downloads\\ImageDatasets', size=256):
@@ -61,15 +62,15 @@ class AnimeDataset(Dataset):
         return blur, img
 
 class GoProDataset(Dataset):
-    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', transform=None, size=256):
+    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', size=256, addnoise=True):
         self.root_dir = root_dir
-        self.transform = transform
         self.images = {
             'blur': [],
             'blur_gamma': [],
             'sharp': []
         }
         self.size = size
+        self.addnoise = addnoise
         for subdir in os.listdir(root_dir):
             blur_path = os.path.join(root_dir, subdir, 'blur')
             blur_gamma_path = os.path.join(root_dir, subdir, 'blur_gamma')
@@ -78,6 +79,15 @@ class GoProDataset(Dataset):
                 self.images['blur'].append(os.path.join(blur_path, x))
                 self.images['blur_gamma'].append(os.path.join(blur_gamma_path, y))
                 self.images['sharp'].append(os.path.join(sharp_path, z))
+                
+        self.to_tensor = v2.Compose([
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True)
+        ])
+        self.aug = v2.Compose([
+            v2.RandomVerticalFlip(),
+            v2.RandomHorizontalFlip(),
+        ])
 
     def __len__(self):
         return len(self.images['blur'])
@@ -95,14 +105,16 @@ class GoProDataset(Dataset):
         x, y = random.randint(0, blur_gamma_image.size[0]-self.size), random.randint(0, blur_gamma_image.size[1]-self.size)
         blur_gamma_image = blur_gamma_image.crop((x,y,x+self.size,y+self.size))
         sharp_image = sharp_image.crop((x,y,x+self.size,y+self.size))
+        
+        blur_gamma_image = self.to_tensor(blur_gamma_image)
+        sharp_image = self.to_tensor(sharp_image)
 
-        # Transform image and label
-        if self.transform:
-            blur_gamma_image = self.transform(blur_gamma_image)
-            sharp_image = self.transform(sharp_image)
-
-        noise = torch.randn(3, self.size, self.size) * 0.02
-        blur_gamma_image += noise
+        blur_gamma_image, sharp_image = self.aug(torch.cat([blur_gamma_image.unsqueeze(0), sharp_image.unsqueeze(0)], dim=0))
+        
+        if self.addnoise:
+            noise = torch.randn(3, self.size, self.size) * 0.02
+            blur_gamma_image += noise
+            
         return blur_gamma_image, sharp_image
 
 class GoProDatasetMulipleLabel(Dataset):
@@ -168,12 +180,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import numpy as np
     
-    transform = v2.Compose([
-        v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=True)
-    ])
-
-    dataset = GoProDataset(transform=transform)
+    dataset = GoProDataset()
     
     sample_blur, sample_sharp = dataset[np.random.randint(0, len(dataset))]
     
