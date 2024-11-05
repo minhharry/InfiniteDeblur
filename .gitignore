@@ -1,3 +1,5 @@
 __pycache__/
 lightning_logs/
 extract_model_code/
+temp.py
+temp.ipynb

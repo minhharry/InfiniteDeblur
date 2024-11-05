@@ -62,7 +62,8 @@ class AnimeDataset(Dataset):
         return blur, img
 
 class GoProDataset(Dataset):
-    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', size=256, addnoise=True):
+    def __init__(self, root_dir='E:\\Downloads\\GOPRO_Large\\train', size=256, addnoise=True, mode='train'):
+        self.mode = mode
         self.root_dir = root_dir
         self.images = {
             'blur': [],
@@ -93,6 +94,14 @@ class GoProDataset(Dataset):
         return len(self.images['blur'])
 
     def __getitem__(self, idx):
+        if self.mode == 'test':
+            blur_gamma_image = Image.open(self.images['blur_gamma'][idx])
+            sharp_image = Image.open(self.images['sharp'][idx])
+            blur_gamma_image = blur_gamma_image.convert('RGB')
+            sharp_image = sharp_image.convert('RGB')
+            blur_gamma_image = self.to_tensor(blur_gamma_image)
+            sharp_image = self.to_tensor(sharp_image)
+            return blur_gamma_image, sharp_image
         # Load image and label
         blur_gamma_image = Image.open(self.images['blur_gamma'][idx])
         sharp_image = Image.open(self.images['sharp'][idx])
@@ -180,7 +189,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import numpy as np
     
-    dataset = GoProDataset()
+    dataset = GoProDataset(root_dir='E:\\Downloads\\GOPRO_Large\\test', mode='test')
     
     sample_blur, sample_sharp = dataset[np.random.randint(0, len(dataset))]
     
