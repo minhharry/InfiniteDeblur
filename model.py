@@ -23,12 +23,12 @@ class BaseLineBlock(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(num_channels, num_channels, 1, 1, 0)
         self.conv2 = nn.Conv2d(num_channels, num_channels, 3, 1, 1, groups=num_channels)
-        self.norm1 = nn.GroupNorm(16, num_channels)
+        self.norm1 = nn.GroupNorm(1, num_channels)
         self.gelu = nn.GELU()
         self.CA = ChannelAttention(num_channels)
         self.conv3 = nn.Conv2d(num_channels, num_channels, 1, 1, 0)
 
-        self.norm2 = nn.GroupNorm(16, num_channels)
+        self.norm2 = nn.GroupNorm(1, num_channels)
         self.conv4 = nn.Conv2d(num_channels, num_channels*2, 1, 1, 0)
         self.conv5 = nn.Conv2d(num_channels*2, num_channels, 1, 1, 0)
 
