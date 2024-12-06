@@ -53,12 +53,12 @@ class BaseLineBlock(nn.Module):
         return x * self.gamma + y
     
 class BaseLineUnet(nn.Module):
-    def __init__(self):
+    def __init__(self, num_encoder_blocks=[1, 1, 1, 28], num_decoder_blocks=[1, 1, 1, 1], num_bottleneck_block=1, base_channels=32):
         super().__init__()
-        self.num_encoder_blocks = [1, 1, 1, 28]
-        self.num_decoder_blocks = [1, 1, 1, 1]
-        self.num_bottleneck_block = 1
-        self.base_channels = 32
+        self.num_encoder_blocks = num_encoder_blocks
+        self.num_decoder_blocks = num_decoder_blocks
+        self.num_bottleneck_block = num_bottleneck_block
+        self.base_channels = base_channels
         
         self.encoders = nn.ModuleList()
         self.decoders = nn.ModuleList()

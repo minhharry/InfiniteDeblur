@@ -4,20 +4,7 @@ from PIL import Image
 import glob
 import os
 import numpy as np
-import shutil
 from tqdm import tqdm
-def move_and_rename_file(source_file, destination_folder, new_filename):
-  """Moves a file to a specified destination folder and renames it.
-
-  Args:
-    source_file: The path to the source file.
-    destination_folder: The path to the destination folder.
-    new_filename: The desired new filename.
-  """
-
-  destination_file = os.path.join(destination_folder, new_filename)
-  shutil.move(source_file, destination_file)
-
 
 def generate_mountain_array(length, peak_height=1.0, peak_position=0.5):
   """Generates a mountain-like array with elements between 0 and 1.
@@ -43,8 +30,8 @@ def generate_mountain_array(length, peak_height=1.0, peak_position=0.5):
 
 
 
-RAW_DATA_PATH = 'ffmpeg_output'
-FRAMES_PER_SAMPLE = 7
+RAW_DATA_PATH = 'ffmpeg_output/B'
+FRAMES_PER_SAMPLE = 21
 image_path = glob.glob(os.path.join(RAW_DATA_PATH,'*'))
 print("Number of images: ", len(image_path))
 
@@ -53,7 +40,7 @@ transform = transforms.Compose([
 ])
 
 
-PREFIX = f'A/A{FRAMES_PER_SAMPLE}'
+PREFIX = f'A/B{FRAMES_PER_SAMPLE}'
 
 if not os.path.exists(os.path.join(f'{PREFIX}' , 'sharp')):
     os.makedirs(os.path.join(f'{PREFIX}' , 'sharp'))
