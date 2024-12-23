@@ -6,6 +6,9 @@ from torchvision.transforms import v2
 
 class RandomPerceptualLoss(nn.Module):
     def __init__(self) -> None:
+        """
+            VGG-like perceptual loss with the first Conv2d layer randomized each iteration.
+        """
         super().__init__()
         SCALE = 1
         self.net = nn.Sequential(
@@ -57,6 +60,118 @@ class RandomPerceptualLoss(nn.Module):
         net_loss += self.loss_fn(input, target) * 8
         return net_loss
     
+class RandomPerceptualLossResetAll(nn.Module):
+    def __init__(self) -> None:
+        """
+            VGG-like perceptual loss with all Conv2d layers randomized each iteration.
+        """
+        super().__init__()
+        SCALE = 1
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net2 = nn.Sequential(
+            nn.Conv2d(8*SCALE, 16*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net3 = nn.Sequential(
+            nn.Conv2d(16*SCALE, 32*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net4 = nn.Sequential(
+            nn.Conv2d(32*SCALE, 64*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        for param in self.net.parameters():
+            param.requires_grad = False
+        for param in self.net2.parameters():
+            param.requires_grad = False
+        for param in self.net3.parameters():
+            param.requires_grad = False
+        for param in self.net4.parameters():
+            param.requires_grad = False
+
+        self.loss_fn = nn.L1Loss()
+    def reset(self):
+        self.net.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+        self.net2.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+        self.net3.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+        self.net4.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+
+    def forward(self, input, target):
+        self.reset()
+        input = self.net(input)
+        target = self.net(target)
+        net_loss = self.loss_fn(input, target)
+        input = self.net2(input)
+        target = self.net2(target)
+        net_loss += self.loss_fn(input, target) * 2
+        input = self.net3(input)
+        target = self.net3(target)
+        net_loss += self.loss_fn(input, target) * 4
+        input = self.net4(input)
+        target = self.net4(target)
+        net_loss += self.loss_fn(input, target) * 8
+        return net_loss
+
+class RandomPerceptualLossNoReset(nn.Module):
+    def __init__(self) -> None:
+        """
+            VGG-like perceptual loss with all Conv2d layers randomized.
+        """
+        super().__init__()
+        SCALE = 1
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net2 = nn.Sequential(
+            nn.Conv2d(8*SCALE, 16*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net3 = nn.Sequential(
+            nn.Conv2d(16*SCALE, 32*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        self.net4 = nn.Sequential(
+            nn.Conv2d(32*SCALE, 64*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        for param in self.net.parameters():
+            param.requires_grad = False
+        for param in self.net2.parameters():
+            param.requires_grad = False
+        for param in self.net3.parameters():
+            param.requires_grad = False
+        for param in self.net4.parameters():
+            param.requires_grad = False
+
+        self.loss_fn = nn.L1Loss()
+
+    def forward(self, input, target):
+        input = self.net(input)
+        target = self.net(target)
+        net_loss = self.loss_fn(input, target)
+        input = self.net2(input)
+        target = self.net2(target)
+        net_loss += self.loss_fn(input, target) * 2
+        input = self.net3(input)
+        target = self.net3(target)
+        net_loss += self.loss_fn(input, target) * 4
+        input = self.net4(input)
+        target = self.net4(target)
+        net_loss += self.loss_fn(input, target) * 8
+        return net_loss
+
 class RandomPerceptualLossLastLayerNoMaxPool(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -153,6 +268,69 @@ class RandomPerceptualLossLastLayer(nn.Module):
         net_loss = self.loss_fn(input, target) 
         return net_loss
 
+class RandomPerceptualLossLastLayerResetAll(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        SCALE = 1
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(8*SCALE, 16*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16*SCALE, 32*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32*SCALE, 64*SCALE, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        for param in self.net.parameters():
+            param.requires_grad = False
+
+        self.loss_fn = nn.L1Loss()
+    def reset(self):
+        self.net.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+
+    def forward(self, input, target):
+        self.reset()
+        input = self.net(input)
+        target = self.net(target)
+        net_loss = self.loss_fn(input, target) 
+        return net_loss
+
+class RandomPerceptualLossLastLayerNoReset(nn.Module):
+    def __init__(self, scale=1) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8*scale, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(8*scale, 16*scale, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16*scale, 32*scale, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32*scale, 64*scale, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.MaxPool2d(2),
+        )
+        for param in self.net.parameters():
+            param.requires_grad = False
+
+        self.loss_fn = nn.L1Loss()
+
+    def reset(self):
+        self.net.apply(lambda m: torch.nn.init.kaiming_normal_(m.weight) if isinstance(m, nn.Conv2d) else None)
+
+    def forward(self, input, target):
+        input = self.net(input)
+        target = self.net(target)
+        net_loss = self.loss_fn(input, target) 
+        return net_loss
+
 class ResizeLoss(nn.Module):
     def __init__(self):
         super().__init__()
@@ -163,18 +341,19 @@ class ResizeLoss(nn.Module):
         self.resize4 = v2.Resize(16)
 
     def forward(self, input, target):
+        net_loss = self.loss_fn(input, target)
         input = self.resize1(input)
         target = self.resize1(target)
-        net_loss = self.loss_fn(input, target)
+        net_loss += self.loss_fn(input, target) * 2
         input = self.resize2(input)
         target = self.resize2(target)
-        net_loss += self.loss_fn(input, target) * 2
+        net_loss += self.loss_fn(input, target) * 4
         input = self.resize3(input)
         target = self.resize3(target)
-        net_loss += self.loss_fn(input, target) * 4
+        net_loss += self.loss_fn(input, target) * 8
         input = self.resize4(input)
         target = self.resize4(target)
-        net_loss += self.loss_fn(input, target) * 8
+        net_loss += self.loss_fn(input, target) * 16
         return net_loss
 
 class PSNRloss(nn.Module):
@@ -199,3 +378,9 @@ class LPIPSLoss(nn.Module):
         target = target * 2 - 1
         
         return self.loss(input, target).squeeze().mean()
+    
+if __name__ == '__main__':
+    from torchinfo import summary
+
+    model = RandomPerceptualLoss()
+    summary(model, ((16, 3, 256, 256),(16, 3, 256, 256)))
