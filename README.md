@@ -3,6 +3,7 @@
 This is the git repository for the report for Programming Integration Project - Artificial Intelligence (CO3101) - HCMUT.
 
 Teacher: Nguyễn Đức Dũng
+
 Student: 
 - Trương Bình Minh - 2212088
 - Nguyễn Đỗ Trung Kiên - 2211724
