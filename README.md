@@ -2,6 +2,12 @@
 
 This is the git repository for the report for Programming Integration Project - Artificial Intelligence (CO3101) - HCMUT.
 
+Teacher: Nguyễn Đức Dũng
+Student: 
+- Trương Bình Minh - 2212088
+- Nguyễn Đỗ Trung Kiên - 2211724
+- Trần Nguyên Bảo - 2210277
+
 ## Training
 Run all cells in `train.ipynb` to train the model.
 
@@ -11,11 +17,6 @@ Run all cells in `validation.ipynb` to validate the model.
 ## Validation to image
 Run all cells in `validation_to_img.ipynb` to validate the model and save the generated images.
 
-
-
-## 
- <img src="https://github.com/user-attachments/assets/1db0f2c4-37bb-4d38-ae97-2cb0be880b39" alt="Compare" width="400" height="200">
- 
 ## Our test
 | #  | Loss function                                      | Explanation                                                                                                                                                      |
 |----|---------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
