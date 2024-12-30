@@ -45,8 +45,6 @@ Run all cells in `validation_to_img.ipynb` to validate the model and save the ge
       <img src="https://github.com/user-attachments/assets/a9583cdf-4b51-4be8-a2d6-5dfab46e5c06" alt="Image 2" width="150" height="75">
       <br><b>(2)</b>
     </td>
-  </tr>
-  <tr>
     <td>
       <img src="https://github.com/user-attachments/assets/959e8fb6-160a-4268-976a-fdd50d16f297" alt="Image 3" width="150" height="100">
       <img src="https://github.com/user-attachments/assets/0fc4b051-b4dc-4355-af75-be561a229d72" alt="Image 3" width="150" height="75">
@@ -69,8 +67,6 @@ Run all cells in `validation_to_img.ipynb` to validate the model and save the ge
       <img src="https://github.com/user-attachments/assets/dd293b84-ffd3-443f-be2d-62c492621d97" alt="Image 6" width="150" height="75">
       <br><b>(6)</b>
     </td>
-  </tr>
-  <tr>
     <td>
       <img src="https://github.com/user-attachments/assets/468c6e47-ab41-4218-8896-1df11a58d753" alt="Image 7" width="150" height="100">
       <img src="https://github.com/user-attachments/assets/314b889d-2a0e-4e4b-b3cb-15bb545bad48" alt="Image 7" width="150" height="75">
@@ -93,8 +89,6 @@ Run all cells in `validation_to_img.ipynb` to validate the model and save the ge
       <img src="https://github.com/user-attachments/assets/fcc940b3-063c-468a-be70-f41e3222fb27" alt="Image 10" width="150" height="75">
       <br><b>(10)</b>
     </td>
-  </tr>
-  <tr>
     <td>
       <img src="https://github.com/user-attachments/assets/5ba1c0d0-3496-4a0c-8143-0ecf4db9d77c" alt="Image 11" width="150" height="100">
       <img src="https://github.com/user-attachments/assets/7a18baeb-ec2d-4104-b0db-a763a932a02c" alt="Image 11" width="150" height="75">
@@ -107,6 +101,7 @@ Run all cells in `validation_to_img.ipynb` to validate the model and save the ge
     </td>
   </tr>
 </table>
+
 
 
 ## Our result
