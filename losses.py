@@ -3,6 +3,26 @@ import torch.nn as nn
 import lpips
 import torch.nn.functional as F
 from torchvision.transforms import v2
+import torchvision
+
+class PerceptualLoss(nn.Module):
+    def __init__(self):
+        super(PerceptualLoss, self).__init__()
+        # Load the pre-trained VGG model
+        self.vgg = torchvision.models.vgg16(weights='DEFAULT').features[:23]
+        for param in self.vgg.parameters():
+            param.requires_grad = False
+        self.loss_fn = nn.MSELoss()  
+        self.layers = [3, 8, 15, 22]  
+        
+    def forward(self, generated, target):
+        loss = 0
+        for i, layer in enumerate(self.vgg):
+            generated = layer(generated)
+            target = layer(target)
+            if i in self.layers:
+                loss += self.loss_fn(generated, target)
+        return loss
 
 class RandomPerceptualLoss(nn.Module):
     def __init__(self) -> None:
