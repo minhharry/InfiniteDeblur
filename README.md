@@ -1,6 +1,6 @@
 # Investigating Perceptual loss for Image deblurring
 
-This is the git repository for the report for Programming Integration Project - Artificial Intelligence (CO3101) - HCMUT.
+This is the git repository for the report for Programming Integration Project - Artificial Intelligence (CO3101) - HCMUT. [View the Report](Đồ_án_Deblurring.pdf)
 
 Teacher: Nguyễn Đức Dũng
 
